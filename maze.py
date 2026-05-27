@@ -37,6 +37,14 @@ class Maze:
                 'walls': {direction.name: has_wall for direction, has_wall in self.walls.items()},
                 'special': self.special.name if self.special else None
             }
+            
+        def __eq__(self: Self, other: Maze.Cell) -> bool:
+            '''Checks if two cells are equal based on their coordinates.'''
+            return self.x == other.x and self.y == other.y
+        
+        def __neq__(self: Self, other: Maze.Cell) -> bool:
+            '''Checks if two cells are not equal based on their coordinates.'''
+            return not self.__eq__(other)
     
     def __init__(self: Self, width: int, height: int) -> Self:
         self.width = width
