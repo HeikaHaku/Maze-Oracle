@@ -11,6 +11,18 @@ class Direction(Enum):
     DOWN = 2
     LEFT = 3
     
+    def opposite(self: Self) -> Direction:
+        '''Returns the opposite direction.'''
+        match self:
+            case Direction.UP:
+                return Direction.DOWN
+            case Direction.RIGHT:
+                return Direction.LEFT
+            case Direction.DOWN:
+                return Direction.UP
+            case Direction.LEFT:
+                return Direction.RIGHT
+    
 class SpecialCell(Enum):
     '''Represents special types of cells within the maze.'''
     START = 0
@@ -37,6 +49,34 @@ class Maze:
                 'walls': {direction.name: has_wall for direction, has_wall in self.walls.items()},
                 'special': self.special.name if self.special else None
             }
+            
+        def neighbors(self: Self, maze: Maze) -> list[Maze.Cell]:
+            '''Returns a list of neighboring cells that are accessible (i.e., no wall in the direction).'''
+            neighbors = []
+            direction_map = { 
+                            'x': { Direction.RIGHT: 1, Direction.LEFT: -1, Direction.UP: 0, Direction.DOWN: 0 },
+                            'y': { Direction.RIGHT: 0, Direction.LEFT: 0, Direction.UP: -1, Direction.DOWN: 1 }
+                            }
+            for direction in Direction:
+                if self.x + direction_map['x'][direction] < 0 or self.x + direction_map['x'][direction] >= maze.width:
+                    continue
+                if self.y + direction_map['y'][direction] < 0 or self.y + direction_map['y'][direction] >= maze.height:
+                    continue
+                neighbors.append(maze.cells[self.x + direction_map['x'][direction]][self.y + direction_map['y'][direction]])
+            return neighbors
+        
+        def get_direction_to(self: Self, other: Maze.Cell) -> Direction | None:
+            '''Determines the direction from this cell to another cell, assuming they are adjacent.'''
+            match (other.x - self.x, other.y - self.y):
+                case (0, -1):
+                    return Direction.UP
+                case (1, 0):
+                    return Direction.RIGHT
+                case (0, 1):
+                    return Direction.DOWN
+                case (-1, 0):
+                    return Direction.LEFT
+            return None  # Not adjacent
             
         def __eq__(self: Self, other: Maze.Cell) -> bool:
             '''Checks if two cells are equal based on their coordinates.'''
@@ -74,6 +114,10 @@ class Maze:
             case Direction.LEFT:
                 return x > 0
         return False
+    
+    def get_cell(self: Self, x: int, y: int) -> Maze.Cell:
+        '''Returns the cell object at the specified coordinates.'''
+        return self.cells[x][y]
         
     def to_dict(self: Self) -> dict:
         '''Converts the maze's properties to a dictionary format for serialization.'''
@@ -81,7 +125,7 @@ class Maze:
             'width': self.width,
             'height': self.height,
             'cells': [[cell.to_dict() for cell in row] for row in self.cells],
-            'special_cells': self.special_cells
+            'special_cells': {cell_type.name: {'x': cell.x, 'y': cell.y} for cell_type, cell in self.special_cells.items()}
         }
     
     def to_json(self: Self) -> str:
@@ -97,9 +141,9 @@ class Maze:
                 cell_data = data['cells'][x][y]
                 cell = maze.cells[x][y]
                 cell.walls = {Direction[direction]: has_wall for direction, has_wall in cell_data['walls'].items()}
-                if cell_data['special'] and cell_data['special'] != 'None':
-                    cell.special = SpecialCell[cell_data['special']]
-                    maze.special_cells[cell.special] = cell
+                cell.special = SpecialCell[cell_data['special']] if cell_data['special'] else None
+        for cell_type, cell_info in data['special_cells'].items():
+            maze.special_cells[SpecialCell[cell_type]] = maze.cells[cell_info['x']][cell_info['y']]
         return maze
         
     # def __str__(self: Self) -> str:
