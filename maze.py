@@ -45,6 +45,10 @@ class Maze:
         def __ne__(self: Self, other: Maze.Cell) -> bool:
             '''Checks if two cells are not equal based on their coordinates.'''
             return not self.__eq__(other)
+        
+        def __hash__(self: Self) -> int:
+            '''Provides a hash based on the cell's coordinates for use in sets and dictionaries.'''
+            return hash((self.x, self.y))
     
     def __init__(self: Self, width: int, height: int) -> Self:
         self.width = width
