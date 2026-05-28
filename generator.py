@@ -1,7 +1,7 @@
 from maze import Maze, Direction, SpecialCell
 import random
 
-def generator(w, h):
+def generator(w: int, h: int) -> Maze:
     '''A maze generation algorithm using Prim's Algorithm.'''
     maze = Maze(w, h)
     
