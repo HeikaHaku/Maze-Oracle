@@ -77,6 +77,10 @@ class Maze:
                 case (-1, 0):
                     return Direction.LEFT
             return None  # Not adjacent
+        
+        def coords(self: Self) -> tuple[int, int]:
+            '''Returns the coordinates of the cell as a tuple.'''
+            return (self.x, self.y)
             
         def __eq__(self: Self, other: Maze.Cell) -> bool:
             '''Checks if two cells are equal based on their coordinates.'''
