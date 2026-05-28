@@ -38,9 +38,20 @@ def generator(w: int, h: int) -> Maze:
             continue  # This should not happen since neighbor is a visited neighbor of current_cell
         current_cell.walls[direction] = False
         neighbor.walls[direction.opposite()] = False
+        
+    # Assign remaining special cells
+    for special in SpecialCell:
+        # These are assigned manually, as they *must* exist
+        if special == SpecialCell.START or special == SpecialCell.EXIT:
+            continue
+        # Choose a random cell in the maze that isn't already a special cell
+        cell: Maze.Cell = random.choice([cell for row in maze.cells for cell in row if cell.special is None])
+        maze.mark_special_cell(*cell.coords(), special)
     
     return maze
 
-maze = generator(10, 10)
+maze: Maze = generator(10, 10)
 # Temporary code to output the maze to verify until the maze visualization or oracle function is implemented
 print(maze.to_dict())
+# Print all special cells
+# print([cell.to_dict() for row in maze.cells for cell in row if cell.special])
