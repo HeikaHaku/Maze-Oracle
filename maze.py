@@ -65,6 +65,18 @@ class Maze:
                 neighbors.append(maze.cells[self.x + direction_map['x'][direction]][self.y + direction_map['y'][direction]])
             return neighbors
         
+        def get_neighbor(self: Self, direction: Direction, maze: Maze) -> Maze.Cell | None:
+            '''Returns the neighboring cell in the specified direction, if it exists.'''
+            direction_map = {
+                'x': { Direction.RIGHT: 1, Direction.LEFT: -1, Direction.UP: 0, Direction.DOWN: 0 },
+                'y': { Direction.RIGHT: 0, Direction.LEFT: 0, Direction.UP: -1, Direction.DOWN: 1 }
+            }
+            new_x = self.x + direction_map['x'][direction]
+            new_y = self.y + direction_map['y'][direction]
+            if 0 <= new_x < maze.width and 0 <= new_y < maze.height:
+                return maze.cells[new_x][new_y]
+            return None
+        
         def get_direction_to(self: Self, other: Maze.Cell) -> Direction | None:
             '''Determines the direction from this cell to another cell, assuming they are adjacent.'''
             match (other.x - self.x, other.y - self.y):
