@@ -58,7 +58,7 @@ def fixed_generator(w: int, h: int, mode: str) -> Maze:
     num_special = len(SpecialCell)
     
     # Base case, needs at least two rows or columns per special case
-    # However, may later tweak to treat special and exit cells specially, like above
+    # However, may later tweak to treat start and exit cells specially, like above
     if num_special * 2 > w and num_special * 2 > h:
         raise Exception('Not enough space for guaranteed special cell placement generation.')
     
