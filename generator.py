@@ -1,5 +1,6 @@
 from maze import Maze, Direction, SpecialCell
 import random
+from typing import Literal
 
 def generator(w: int, h: int) -> Maze:
     '''A maze generation algorithm using Prim's Algorithm.'''
@@ -50,15 +51,27 @@ def generator(w: int, h: int) -> Maze:
     
     return maze
 
-def fixed_generator(w: int, h: int, mode: str) -> Maze:
+def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 'all'] = 'valid') -> Maze:
     '''A maze generation algorithm with logic to ensure the desired validity or fail state for testing.
-    TODO: Implement different modes for maze generation.'''
+    
+Modes:
+    - Valid: All placements of special cells are correct, and the maze is valid.
+    - Ordering: Rearrange the ordering of the special cells to make it invalid.
+    - Paths: Allow multiple paths, allowing special cells to be bypassed, rendering it invalid.
+    - All: All of the above invalid options, plus any that get added later.
+    
+TODO: Implement different modes for maze generation.'''
     maze = Maze(w, h)
     
-    num_special = len(SpecialCell)
+    # TODO: Also exclude exit cell if I can figure out how to guarantee it's placement is correct
+    special_cells = [special for special in SpecialCell if special != SpecialCell.START]
     
-    # Base case, needs at least two rows or columns per special case
-    # However, may later tweak to treat start and exit cells specially, like above
+    if mode == 'ordering' or mode == 'all':
+        random.shuffle(special_cells)
+    
+    num_special = len(special_cells)
+    
+    # Base case, needs at least two rows or columns per special case, not including start or exit
     if num_special * 2 > w and num_special * 2 > h:
         raise Exception('Not enough space for guaranteed special cell placement generation.')
     
@@ -72,7 +85,7 @@ def fixed_generator(w: int, h: int, mode: str) -> Maze:
     edge_cells = [(x, 0) for x in range(w)] + [(x, h-1) for x in range(w)] + [(0, y) for y in range(h)] + [(w-1, y) for y in range(h)]
     
     offset = 0
-    for special in SpecialCell:
+    for special in special_cells:
         zone_size = size + (1 if remainder > 0 else 0)
         zone: list[Maze.Cell] = [maze.get_cell(offset + x, y) for x in range(zone_size) for y in range(h)] if orientation == 'vertical' else [maze.get_cell(x, offset + y) for x in range(w) for y in range(zone_size)]
         remainder -= 1
@@ -81,14 +94,14 @@ def fixed_generator(w: int, h: int, mode: str) -> Maze:
         
         cell: Maze.Cell | None = None
         
-        if special == SpecialCell.START or special == SpecialCell.EXIT:
+        if special == SpecialCell.EXIT:
             cell = random.choice([cell for cell in zone if cell.coords() in edge_cells])
-            if special == SpecialCell.START:
-                # Connect a random cell in the start zone to the next
-                start_connect: Maze.Cell = random.choice([c for c in zone if c.x == zone_size - 1] if orientation == 'vertical' else [c for c in zone if c.y == zone_size - 1])
-                neighbor = start_connect.get_neighbor(Direction.RIGHT if orientation == 'vertical' else Direction.DOWN, maze) # type: ignore
-                neighbor.walls[Direction.LEFT if orientation == 'vertical' else Direction.UP] = False
-                start_connect.walls[Direction.RIGHT if orientation == 'vertical' else Direction.DOWN] = False
+            # if special == SpecialCell.START:
+            #     # Connect a random cell in the start zone to the next
+            #     start_connect: Maze.Cell = random.choice([c for c in zone if c.x == zone_size - 1] if orientation == 'vertical' else [c for c in zone if c.y == zone_size - 1])
+            #     neighbor = start_connect.get_neighbor(Direction.RIGHT if orientation == 'vertical' else Direction.DOWN, maze) # type: ignore
+            #     neighbor.walls[Direction.LEFT if orientation == 'vertical' else Direction.UP] = False
+            #     start_connect.walls[Direction.RIGHT if orientation == 'vertical' else Direction.DOWN] = False
         else:
             # Place the special cell along the zone boundry to the next
             # So we can use it as the path to the next zone
@@ -97,6 +110,12 @@ def fixed_generator(w: int, h: int, mode: str) -> Maze:
             neighbor: Maze.Cell = cell.get_neighbor(Direction.RIGHT if orientation == 'vertical' else Direction.DOWN, maze) # type: ignore
             neighbor.walls[Direction.LEFT if orientation == 'vertical' else Direction.UP] = False
             cell.walls[Direction.RIGHT if orientation == 'vertical' else Direction.DOWN] = False
+            if len(zones) == 0:
+                start = random.choice([c for c in zone if c.coords() in edge_cells and c != cell])
+                maze.mark_special_cell(*start.coords(), SpecialCell.START)
+            # elif len(zones) == num_special - 1:
+            #     end = random.choice([c for c in zone if c.coords() in edge_cells and c != cell])
+            #     maze.mark_special_cell(*end.coords(), SpecialCell.EXIT)
         maze.mark_special_cell(*cell.coords(), special)
         
         unvisited.append(cell)
