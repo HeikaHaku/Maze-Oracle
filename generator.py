@@ -1,4 +1,5 @@
-from maze import Maze, Direction, SpecialCell
+from maze import Maze
+from utils import SpecialCell, Direction
 import random
 from typing import Literal
 
@@ -31,7 +32,16 @@ def generator(w: int, h: int) -> Maze:
             continue
         
         # Choose a random visited neighbor unless you would be connecting the starting cell to the exit cell, in which case choose a random visited neighbor that is not the starting cell
-        neighbor = random.choice([cell for cell in visited_neighbors if cell.special != SpecialCell.START]) if current_cell.special == SpecialCell.EXIT else random.choice(visited_neighbors)
+        neighbor: Maze.Cell
+        if current_cell.special == SpecialCell.EXIT:
+            filtered = [cell for cell in visited_neighbors if cell.special != SpecialCell.START]
+            if not filtered:
+                visited.remove(current_cell)
+                unvisited.append(current_cell)
+                continue
+            neighbor = random.choice(filtered)
+        else:
+            neighbor = random.choice(visited_neighbors)
         
         # Find the direction from the current cell to the chosen neighboring cell and remove the wall between them
         direction: Direction | None = current_cell.get_direction_to(neighbor)
@@ -54,13 +64,13 @@ def generator(w: int, h: int) -> Maze:
 def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 'all'] = 'valid') -> Maze:
     '''A maze generation algorithm with logic to ensure the desired validity or fail state for testing.
     
-Modes:
+    Modes:
     - Valid: All placements of special cells are correct, and the maze is valid.
     - Ordering: Rearrange the ordering of the special cells to make it invalid.
     - Paths: Allow multiple paths, allowing special cells to be bypassed, rendering it invalid.
     - All: All of the above invalid options, plus any that get added later.
     
-TODO: Implement different modes for maze generation.'''
+    TODO: Implement different modes for maze generation.'''
     maze = Maze(w, h)
     
     # TODO: Also exclude exit cell if I can figure out how to guarantee it's placement is correct
@@ -145,9 +155,9 @@ TODO: Implement different modes for maze generation.'''
     return maze
 
 # maze: Maze = generator(10, 10)
-valid_maze: Maze = fixed_generator(10,10, 'valid')
+# valid_maze: Maze = fixed_generator(10,10, 'valid')
 # Temporary code to output the maze to verify until the maze visualization or oracle function is implemented
 # print(maze.to_dict())
-print(valid_maze.to_dict())
+# print(valid_maze.to_dict())
 # Print all special cells
 # print([cell.to_dict() for row in maze.cells for cell in row if cell.special])
