@@ -1,9 +1,6 @@
-from maze import Maze
-from classic_oracle import OracleResult
 from utils import ResultTable
 import classic_oracle
 from generator import generator, fixed_generator
-from typing import Self
 from time import perf_counter_ns
 
 num = 100000

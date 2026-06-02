@@ -1,5 +1,6 @@
-from utils import OracleResult, State, SpecialCellOrder
-from maze import Maze, Direction, SpecialCell
+from utils import OracleResult, State
+from maze_utils import SpecialCell, SpecialCellOrder
+from maze import Maze
 from generator import generator, fixed_generator
 from collections import deque
 

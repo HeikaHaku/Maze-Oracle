@@ -1,5 +1,5 @@
 from maze import Maze
-from utils import SpecialCell, Direction
+from maze_utils import SpecialCell, Direction
 import random
 from typing import Literal
 
@@ -15,14 +15,14 @@ def generator(w: int, h: int) -> Maze:
     maze.mark_special_cell(*ending_cell, SpecialCell.EXIT)
     
     # Initialize the visited and unvisited lists for the maze generation algorithm
-    visited: list[Maze.Cell] = []
+    visited: set[Maze.Cell] = set()
     neighbors: list[Maze.Cell] = []
     unvisited: list[Maze.Cell] = [maze.get_cell(*starting_cell)]
         
     while unvisited:
         current_cell = random.choice(unvisited)
         unvisited.remove(current_cell)
-        visited.append(current_cell)
+        visited.add(current_cell)
         neighbors = current_cell.neighbors(maze)
         unvisited.extend([neighbor for neighbor in neighbors if neighbor not in visited and neighbor not in unvisited])
         visited_neighbors = [neighbor for neighbor in neighbors if neighbor in visited]
@@ -99,7 +99,7 @@ def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 
         zone_size = size + (1 if remainder > 0 else 0)
         zone: list[Maze.Cell] = [maze.get_cell(offset + x, y) for x in range(zone_size) for y in range(h)] if orientation == 'vertical' else [maze.get_cell(x, offset + y) for x in range(w) for y in range(zone_size)]
         remainder -= 1
-        visited: list[Maze.Cell] = []
+        visited: set[Maze.Cell] = set()
         unvisited: list[Maze.Cell] = []
         
         cell: Maze.Cell | None = None
@@ -133,7 +133,7 @@ def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 
         while unvisited:
             current_cell = random.choice(unvisited)
             unvisited.remove(current_cell)
-            visited.append(current_cell)
+            visited.add(current_cell)
             neighbors = [cell for cell in current_cell.neighbors(maze) if cell in zone]
             unvisited.extend([neighbor for neighbor in neighbors if neighbor not in visited and neighbor not in unvisited])
             visited_neighbors = [neighbor for neighbor in neighbors if neighbor in visited]

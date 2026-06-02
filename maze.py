@@ -1,9 +1,7 @@
 from __future__ import annotations
-import random
 import json
-from enum import IntEnum, Enum
 from typing import Self
-from utils import Direction, SpecialCell
+from maze_utils import Direction, SpecialCell
 
 class Maze:
     '''Represents a maze structure with cells, walls, and special cell types.'''
