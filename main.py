@@ -1,5 +1,5 @@
 from utils import ResultTable
-import classic_oracle
+import classic_oracle as classic
 from generator import generator, fixed_generator
 from time import perf_counter_ns
 
@@ -8,7 +8,7 @@ results = ResultTable()
 start = perf_counter_ns()
 for i in range(num):
     maze = generator(10, 10)
-    result = classic_oracle.oracle(maze)
+    result = classic.oracle(maze)
     end = perf_counter_ns()
     results.add(maze, result, end - start)
     start = perf_counter_ns()
