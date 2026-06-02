@@ -1,35 +1,9 @@
 from __future__ import annotations
 import random
 import json
-from enum import Enum
+from enum import IntEnum, Enum
 from typing import Self
-
-class Direction(Enum):
-    '''Represents the four cardinal directions for maze generation and navigation.'''
-    UP = 0
-    RIGHT = 1
-    DOWN = 2
-    LEFT = 3
-    
-    def opposite(self: Self) -> Direction:
-        '''Returns the opposite direction.'''
-        match self:
-            case Direction.UP:
-                return Direction.DOWN
-            case Direction.RIGHT:
-                return Direction.LEFT
-            case Direction.DOWN:
-                return Direction.UP
-            case Direction.LEFT:
-                return Direction.RIGHT
-    
-class SpecialCell(Enum):
-    '''Represents special types of cells within the maze.'''
-    START = 0
-    KEY = 1
-    BOSS = 2
-    TREASURE = 3
-    EXIT = 4
+from utils import Direction, SpecialCell
 
 class Maze:
     '''Represents a maze structure with cells, walls, and special cell types.'''
@@ -50,9 +24,9 @@ class Maze:
                 'special': self.special.name if self.special else None
             }
             
-        def neighbors(self: Self, maze: Maze) -> list[Maze.Cell]:
-            '''Returns a list of neighboring cells that are accessible (i.e., no wall in the direction).'''
-            neighbors = []
+        def neighbors(self: Self, maze: Maze, valid: bool = False) -> list[Maze.Cell]:
+            '''Returns a list of neighboring cells, and if valid is set, only those that are accessible (i.e., no wall in the direction).'''
+            neighbors: list[Maze.Cell] = []
             direction_map = { 
                             'x': { Direction.RIGHT: 1, Direction.LEFT: -1, Direction.UP: 0, Direction.DOWN: 0 },
                             'y': { Direction.RIGHT: 0, Direction.LEFT: 0, Direction.UP: -1, Direction.DOWN: 1 }
@@ -63,6 +37,9 @@ class Maze:
                 if self.y + direction_map['y'][direction] < 0 or self.y + direction_map['y'][direction] >= maze.height:
                     continue
                 neighbors.append(maze.cells[self.x + direction_map['x'][direction]][self.y + direction_map['y'][direction]])
+            if valid:
+                # Return only accessible neighbors (i.e., no wall in the direction)
+                return [neighbor for neighbor in neighbors if not self.walls[Direction(self.get_direction_to(neighbor))]]
             return neighbors
         
         def get_neighbor(self: Self, direction: Direction, maze: Maze) -> Maze.Cell | None:
