@@ -39,3 +39,11 @@ class ResultTable:
             self.valid.append(ResultTable.Result(maze, result, time_ns))
         else:
             self.invalid.append(ResultTable.Result(maze, result, time_ns))
+            
+def lcg(state: int, bits: int = 16) -> int:
+    '''Linear Congruential Generator'''
+    a = 1103515245
+    c = 12345
+    mod = (2 ** bits) - 1
+    
+    return (a * state + c) % mod
