@@ -33,6 +33,6 @@ print(f"Two randomly selected invalid seeds: {random.sample([result.maze.seed fo
 # print(f"Two randomly selected invalid mazes: {[result.maze.to_dict() for result in random.sample(results.invalid, 2)]}")
 
 # print("Drawing two random valid mazes...")
-# [random.choice(results.valid).maze.draw() for _ in range(2)]
+# [maze.draw() for maze in random.sample([result.maze for result in results.valid], 2)]
 # print("Drawing two random invalid mazes...")
-# [random.choice(results.invalid).maze.draw(invalid=True) for _ in range(2)]
+# [maze.draw(invalid=True) for maze in random.sample([result.maze for result in results.invalid], 2)]
