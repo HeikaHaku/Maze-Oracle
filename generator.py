@@ -158,6 +158,41 @@ def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 
     
     return maze
 
+def random_binary_generator(w: int, h: int) -> Maze:
+    '''A maze generation algorithm that generates a random binary string and decodes it into a maze.'''
+    # Each cell should be represented by 5 bits for walls (up, right, down, left, special) and 3 bits for the special cell type (if any)
+    # So each cell is represented by 8 bits (1 byte)
+    num_cells = w * h
+    num_bytes = num_cells + 8  # Since each cell is 1 byte and header is 8 bytes
+    random_bytes = random.randbytes(num_bytes)
+    
+    return Maze.from_binary(random_bytes)
+
+def binary_generator(w: int, h: int) -> Maze:
+    '''A maze generation algorithm that produces a valid maze by generating a binary string with the correct format and decoding it into a maze.'''
+    num_cells = w * h
+    binary = bytearray()
+    binary.extend(w.to_bytes(2, 'big'))
+    binary.extend(h.to_bytes(2, 'big'))
+    binary.extend((0).to_bytes(4, 'big'))  # Seed is not used in this generator, so set to 0
+    special_cells = [SpecialCell.START, SpecialCell.KEY, SpecialCell.BOSS, SpecialCell.TREASURE, SpecialCell.EXIT]
+    for _ in range(num_cells):
+        byte = 0
+        # Randomly decide which walls to include
+        byte |= random.choice([0, 1]) << 7  # Up
+        byte |= random.choice([0, 1]) << 6  # Right
+        byte |= random.choice([0, 1]) << 5  # Down
+        byte |= random.choice([0, 1]) << 4  # Left
+        # Randomly decide if this cell is a special cell and which type
+        if len(special_cells) and random.choice([False, True]):
+                cell_type = random.choice(special_cells)
+                byte |= 1 << 3  # Special cell bit
+                byte |= cell_type.value  # Special cell type bits
+                special_cells.remove(cell_type)  # Ensure each special cell is only used once
+        binary.append(byte)
+    return Maze.from_binary(binary)
+            
+
 # maze: Maze = generator(10, 10)
 # valid_maze: Maze = fixed_generator(10,10, 'valid')
 # Temporary code to output the maze to verify until the maze visualization or oracle function is implemented
@@ -165,3 +200,14 @@ def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 
 # print(valid_maze.to_dict())
 # Print all special cells
 # print([cell.to_dict() for row in maze.cells for cell in row if cell.special])
+
+# maze: Maze = generator(10, 10, 1269070205)
+# print(maze.to_binary())
+# b = maze.to_binary()
+# maze2: Maze = Maze.from_binary(b['bytes'])
+# print(maze.to_dict() == maze2.to_dict())
+# maze.draw(filename='test.png')
+# maze2.draw(filename='test2.png')
+
+# maze: Maze = binary_generator(10, 10)
+# maze.draw(filename='binary_test.png')
