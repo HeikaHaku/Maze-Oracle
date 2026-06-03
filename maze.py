@@ -2,6 +2,7 @@ from __future__ import annotations
 import json
 from typing import Self
 from maze_utils import Direction, SpecialCell
+from PIL import Image, ImageDraw
 
 class Maze:
     '''Represents a maze structure with cells, walls, and special cell types.'''
@@ -138,6 +139,44 @@ class Maze:
         for cell_type, cell_info in data['special_cells'].items():
             maze.special_cells[SpecialCell[cell_type]] = maze.cells[cell_info['x']][cell_info['y']]
         return maze
+    
+    def draw(self: Self, cell_size: int = 20, invalid: bool = False) -> None:
+        '''Generates a png image of the maze using PIL.'''
+        width = self.width * cell_size
+        height = self.height * cell_size
+        image = Image.new('RGB', (width, height), 'white')
+        draw = ImageDraw.Draw(image)
+        
+        for row in self.cells:
+            for cell in row:
+                x0 = cell.x * cell_size
+                y0 = cell.y * cell_size
+                x1 = x0 + cell_size
+                y1 = y0 + cell_size
+                
+                if cell.special != None:
+                    match cell.special:
+                        case SpecialCell.START:
+                            draw.rectangle([x0, y0, x1, y1], fill='green')
+                        case SpecialCell.KEY:
+                            draw.rectangle([x0, y0, x1, y1], fill='yellow')
+                        case SpecialCell.BOSS:
+                            draw.rectangle([x0, y0, x1, y1], fill='red')
+                        case SpecialCell.TREASURE:
+                            draw.rectangle([x0, y0, x1, y1], fill='blue')
+                        case SpecialCell.EXIT:
+                            draw.rectangle([x0, y0, x1, y1], fill='purple')
+                            
+                if cell.walls[Direction.UP]:
+                    draw.line([x0, y0, x1, y0], fill='black')
+                if cell.walls[Direction.RIGHT]:
+                    draw.line([x1, y0, x1, y1], fill='black')
+                if cell.walls[Direction.DOWN]:
+                    draw.line([x0, y1, x1, y1], fill='black')
+                if cell.walls[Direction.LEFT]:
+                    draw.line([x0, y0, x0, y1], fill='black')
+                    
+        image.save(f'maze_{self.seed}{"_invalid" if invalid else ""}.png')
         
     # def __str__(self: Self) -> str:
     #     pass  # Implement a method to visualize the maze as a string if needed
