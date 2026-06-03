@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from typing import Self
 from maze_utils import Direction, SpecialCell
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 class Maze:
     '''Represents a maze structure with cells, walls, and special cell types.'''
@@ -20,7 +20,7 @@ class Maze:
                 'x': self.x,
                 'y': self.y,
                 'walls': {direction.name: has_wall for direction, has_wall in self.walls.items()},
-                'special': self.special.name if self.special else None
+                'special': self.special.name if self.special != None else None
             }
             
         def neighbors(self: Self, maze: Maze, valid: bool = False) -> list[Maze.Cell]:
@@ -140,12 +140,13 @@ class Maze:
             maze.special_cells[SpecialCell[cell_type]] = maze.cells[cell_info['x']][cell_info['y']]
         return maze
     
-    def draw(self: Self, cell_size: int = 20, invalid: bool = False) -> None:
+    def draw(self: Self, cell_size: int = 40, invalid: bool = False) -> None:
         '''Generates a png image of the maze using PIL.'''
         width = self.width * cell_size
         height = self.height * cell_size
         image = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(image)
+        font = ImageFont.load_default(size=cell_size)
         
         for row in self.cells:
             for cell in row:
@@ -155,26 +156,34 @@ class Maze:
                 y1 = y0 + cell_size
                 
                 if cell.special != None:
+                    bbox = draw.textbbox((0, 0), cell.special.name[0], font=font)
+                    text_w = bbox[2] - bbox[0]
+                    text_h = bbox[3] - bbox[1]
+                    # Center the text within the cell
+                    x = x0 + (cell_size - text_w) // 2 - bbox[0]
+                    y = y0 + (cell_size - text_h) // 2 - bbox[1]
+                    fill = 'white' if cell.special == SpecialCell.BOSS else 'black'
                     match cell.special:
                         case SpecialCell.START:
-                            draw.rectangle([x0, y0, x1, y1], fill='green')
+                            draw.rectangle([x0, y0, x1, y1], fill='#56B4E9')
                         case SpecialCell.KEY:
-                            draw.rectangle([x0, y0, x1, y1], fill='yellow')
+                            draw.rectangle([x0, y0, x1, y1], fill='#F0E442')
                         case SpecialCell.BOSS:
-                            draw.rectangle([x0, y0, x1, y1], fill='red')
+                            draw.rectangle([x0, y0, x1, y1], fill='#D55E00')
                         case SpecialCell.TREASURE:
-                            draw.rectangle([x0, y0, x1, y1], fill='blue')
+                            draw.rectangle([x0, y0, x1, y1], fill='#CC79A7')
                         case SpecialCell.EXIT:
-                            draw.rectangle([x0, y0, x1, y1], fill='purple')
+                            draw.rectangle([x0, y0, x1, y1], fill='#009E73')
+                    draw.text((x, y), cell.special.name[0], fill=fill, font=font)
                             
                 if cell.walls[Direction.UP]:
-                    draw.line([x0, y0, x1, y0], fill='black')
+                    draw.line([x0, y0, x1, y0], fill='black', width=3)
                 if cell.walls[Direction.RIGHT]:
-                    draw.line([x1, y0, x1, y1], fill='black')
+                    draw.line([x1, y0, x1, y1], fill='black', width=3)
                 if cell.walls[Direction.DOWN]:
-                    draw.line([x0, y1, x1, y1], fill='black')
+                    draw.line([x0, y1, x1, y1], fill='black', width=3)
                 if cell.walls[Direction.LEFT]:
-                    draw.line([x0, y0, x0, y1], fill='black')
+                    draw.line([x0, y0, x0, y1], fill='black', width=3)
                     
         image.save(f'maze_{self.seed}{"_invalid" if invalid else ""}.png')
         
