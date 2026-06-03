@@ -3,8 +3,10 @@ from maze_utils import SpecialCell, Direction
 import random
 from typing import Literal
 
-def generator(w: int, h: int) -> Maze:
+def generator(w: int, h: int, seed: bytearray | bytes | float | int | str | None = None) -> Maze:
     '''A maze generation algorithm using Prim's Algorithm.'''
+    if seed is not None:
+        random.seed(seed)
     maze = Maze(w, h)
     
     # Pick starting and ending cells from along the edges of the maze
@@ -61,7 +63,7 @@ def generator(w: int, h: int) -> Maze:
     
     return maze
 
-def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 'all'] = 'valid') -> Maze:
+def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 'all'] = 'valid', seed: bytearray | bytes | float | int | str | None = None) -> Maze:
     '''A maze generation algorithm with logic to ensure the desired validity or fail state for testing.
     
     Modes:
@@ -71,6 +73,8 @@ def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 
     - All: All of the above invalid options, plus any that get added later.
     
     TODO: Implement different modes for maze generation.'''
+    if seed is not None:
+        random.seed(seed)
     maze = Maze(w, h)
     
     # TODO: Also exclude exit cell if I can figure out how to guarantee it's placement is correct
