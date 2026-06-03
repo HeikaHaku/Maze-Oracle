@@ -140,7 +140,7 @@ class Maze:
             maze.special_cells[SpecialCell[cell_type]] = maze.cells[cell_info['x']][cell_info['y']]
         return maze
     
-    def draw(self: Self, cell_size: int = 40, invalid: bool = False) -> None:
+    def draw(self: Self, cell_size: int = 40, invalid: bool = False, filename: str | None = None) -> None:
         '''Generates a png image of the maze using PIL.'''
         width = self.width * cell_size
         height = self.height * cell_size
@@ -185,7 +185,56 @@ class Maze:
                 if cell.walls[Direction.LEFT]:
                     draw.line([x0, y0, x0, y1], fill='black', width=3)
                     
-        image.save(f'maze_{self.seed}{"_invalid" if invalid else ""}.png')
+        image.save(f'maze_{self.seed}{"_invalid" if invalid else ""}.png' if not filename else filename)
+        
+    def to_binary(self: Self) -> dict[str, bytes | str | int]:
+        '''Serializes the maze to a string of bits.'''
+        # Each cell should be represented by 5 bits for walls (up, right, down, left, special) and 3 bits for the special cell type (if any)
+        # So each cell is represented by 8 bits (1 byte)
+        # The maze can be represented as a sequence of bytes, one for each cell, followed by a header containing the width and height of the maze (2 bytes each)
+        binary = bytearray()
+        binary.extend(self.width.to_bytes(2, 'big'))
+        binary.extend(self.height.to_bytes(2, 'big'))
+        binary.extend(self.seed.to_bytes(4, 'big') if self.seed is not None else (0).to_bytes(4, 'big'))
+        for row in self.cells:
+            for cell in row:
+                byte = 0
+                byte |= cell.walls[Direction.UP] << 7
+                byte |= cell.walls[Direction.RIGHT] << 6
+                byte |= cell.walls[Direction.DOWN] << 5
+                byte |= cell.walls[Direction.LEFT] << 4
+                if cell.special != None:
+                    byte |= 1 << 3
+                    byte |= cell.special.value
+                binary.append(byte)
+        # Return bytes as hex string for easier visualization
+        bitlen = len(binary) * 8
+        n = int.from_bytes(binary, 'big')
+        s = format(n, f'0{bitlen}b')
+        return { 'bytes': bytes(binary), 'hex': bytes(binary).hex(), 'binary': s, 'decimal': n }
+    
+    @staticmethod
+    def from_binary( binary: bytes) -> Maze:
+        '''Deserializes a string of bits to create a Maze instance.'''
+        width = int.from_bytes(binary[0:2], 'big')
+        height = int.from_bytes(binary[2:4], 'big')
+        seed = int.from_bytes(binary[4:8], 'big') or None
+        maze = Maze(width, height, seed)
+        index = 8
+        for x in range(width):
+            for y in range(height):
+                byte = binary[index]
+                index += 1
+                cell = maze.cells[x][y]
+                cell.walls[Direction.UP] = bool(byte & (1 << 7))
+                cell.walls[Direction.RIGHT] = bool(byte & (1 << 6))
+                cell.walls[Direction.DOWN] = bool(byte & (1 << 5))
+                cell.walls[Direction.LEFT] = bool(byte & (1 << 4))
+                if byte & (1 << 3):
+                    special_value = byte & 0b111
+                    cell.special = SpecialCell(special_value)
+                    maze.special_cells[cell.special] = cell
+        return maze
         
     # def __str__(self: Self) -> str:
     #     pass  # Implement a method to visualize the maze as a string if needed
