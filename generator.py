@@ -7,7 +7,7 @@ def generator(w: int, h: int, seed: bytearray | bytes | float | int | str | None
     '''A maze generation algorithm using Prim's Algorithm.'''
     if seed is not None:
         random.seed(seed)
-    maze = Maze(w, h)
+    maze = Maze(w, h, seed)
     
     # Pick starting and ending cells from along the edges of the maze
     edge_cells = [(x, 0) for x in range(w)] + [(x, h-1) for x in range(w)] + [(0, y) for y in range(h)] + [(w-1, y) for y in range(h)]
@@ -75,7 +75,7 @@ def fixed_generator(w: int, h: int, mode: Literal['valid', 'ordering', 'paths', 
     TODO: Implement different modes for maze generation.'''
     if seed is not None:
         random.seed(seed)
-    maze = Maze(w, h)
+    maze = Maze(w, h, seed)
     
     # TODO: Also exclude exit cell if I can figure out how to guarantee it's placement is correct
     special_cells = [special for special in SpecialCell if special != SpecialCell.START]

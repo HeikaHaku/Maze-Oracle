@@ -81,11 +81,12 @@ class Maze:
             '''Provides a hash based on the cell's coordinates for use in sets and dictionaries.'''
             return hash((self.x, self.y))
     
-    def __init__(self: Self, width: int, height: int) -> Self:
+    def __init__(self: Self, width: int, height: int, seed: bytearray | bytes | float | int | str | None = None) -> Self:
         self.width = width
         self.height = height
         self.cells = [[self.Cell(x, y) for y in range(height)] for x in range(width)]
         self.special_cells: dict[SpecialCell, Maze.Cell] = {}
+        self.seed = seed
         
     def mark_special_cell(self: Self, x: int, y: int, cell_type: SpecialCell) -> None:
         '''Marks a specific cell in the maze as a special cell of the given type. There should only be one.
@@ -112,12 +113,13 @@ class Maze:
         
     def to_dict(self: Self) -> dict:
         '''Converts the maze's properties to a dictionary format for serialization.'''
-        return {
+        return {k: v for k, v in {
             'width': self.width,
             'height': self.height,
             'cells': [[cell.to_dict() for cell in row] for row in self.cells],
-            'special_cells': {cell_type.name: {'x': cell.x, 'y': cell.y} for cell_type, cell in self.special_cells.items()}
-        }
+            'special_cells': {cell_type.name: {'x': cell.x, 'y': cell.y} for cell_type, cell in self.special_cells.items()},
+            'seed': self.seed
+        }.items() if v is not None and v != [] and v != {}}
     
     def to_json(self: Self) -> str:
         '''Serializes the maze to a JSON string.'''
