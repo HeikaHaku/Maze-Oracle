@@ -1,5 +1,6 @@
 from maze import Maze
 from maze_utils import SpecialCell, Direction
+from utils import LCG
 import random
 from typing import Literal
 
@@ -191,6 +192,35 @@ def binary_generator(w: int, h: int) -> Maze:
                 special_cells.remove(cell_type)  # Ensure each special cell is only used once
         binary.append(byte)
     return Maze.from_binary(binary)
+
+def reversible_generator(seed: int, bits: int = 16, width: int = 16, height: int = 16) -> Maze:
+    '''
+    Fixed-output procedural maze generation. Uses an LCG to produce predictable results used to generate the maze.
+    '''
+    
+    maze = Maze(width, height, seed)
+    rng = LCG(seed, bits)
+    
+    specials = {k: rng() for k in SpecialCell}
+    
+    # Get cell coordinates along the perimeter
+    edge_cells = [(x, y) for x in range(width) for y in range(height) if x == 0 or y == 0 or x == width - 1 or y == height - 1]
+    # Get all possible cell coordinates
+    cells = [(x, y) for x in range(width) for y in range(height)]
+    
+    for special in specials:
+        if special == SpecialCell.START or special == SpecialCell.EXIT:
+            coords = edge_cells[specials[special] % len(edge_cells)]
+        else:
+            coords = cells[specials[special] % len(cells)]
+        maze.mark_special_cell(*coords, special)
+        if coords in edge_cells:
+            edge_cells.remove(coords)
+        cells.remove(coords)
+
+    # TODO: Set Walls
+
+    return maze
             
 
 # maze: Maze = generator(10, 10)
