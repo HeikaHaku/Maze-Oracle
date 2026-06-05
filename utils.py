@@ -51,15 +51,31 @@ def lcg(state: int, bits: int = 16) -> int:
 # A class based version which tracks its own state.
 class LCG:
     '''Linear Congruential Generator initialized with a seed and number of bits.'''
-    a: int = 1103515245
-    c: int = 12345
+    _a: int = 1103515245
+    _c: int = 12345
     
     def __init__(self: Self, seed: int, bits: int = 16) -> Self:
         self._state: int = seed
         self._seed: int = seed
-        self.bits: int = bits
-        self.mod: int = (2 ** bits) - 1
+        self._bits: int = bits
+        self._mod: int = (2 ** bits) - 1
         
+    @property
+    def a(self: Self) -> int:
+        return self._a
+    
+    @property
+    def c(self: Self) -> int:
+        return self._c
+    
+    @property
+    def bits(self: Self) -> int:
+        return self._bits
+    
+    @property
+    def mod(self: Self) -> int:
+        return self._mod
+
     @property
     def state(self: Self) -> int:
         return self._state
@@ -74,7 +90,7 @@ class LCG:
         self._state = value
         
     def next(self: Self) -> int:
-        self._state = (self.a * self._state + self.c) % self.mod
+        self._state = (self._a * self._state + self._c) % self._mod
         return self._state
     
     def __call__(self: Self) -> int:
