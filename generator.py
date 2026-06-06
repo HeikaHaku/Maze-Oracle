@@ -218,7 +218,13 @@ def reversible_generator(seed: int, bits: int = 16, width: int = 16, height: int
             edge_cells.remove(coords)
         cells.remove(coords)
 
-    # TODO: Set Walls
+    # Set walls
+    for x in range(width):
+        for y in range(height):
+            if y != height - 1 and rng() >= rng.mod // 2:
+                maze.get_cell(x, y).remove_wall(Direction.DOWN, maze)
+            if x != width - 1 and rng() >= rng.mod // 2:
+                maze.get_cell(x, y).remove_wall(Direction.RIGHT, maze)
 
     return maze
             
@@ -241,3 +247,7 @@ def reversible_generator(seed: int, bits: int = 16, width: int = 16, height: int
 
 # maze: Maze = binary_generator(10, 10)
 # maze.draw(filename='binary_test.png')
+
+# for _ in range(4):
+#     maze = reversible_generator(random.randint(0, 2**31 - 1))
+#     maze.draw()
