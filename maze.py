@@ -66,6 +66,15 @@ class Maze:
                     return Direction.LEFT
             return None  # Not adjacent
         
+        def remove_wall(self: Self, direction: Direction, maze: Maze) -> None:
+            '''Removes the wall in the specified direction.'''
+            if direction in self.walls:
+                neighbor = self.get_neighbor(direction, maze)
+                if neighbor is None:
+                    return
+                self.walls[direction] = False
+                neighbor.walls[direction.opposite()] = False
+        
         def coords(self: Self) -> tuple[int, int]:
             '''Returns the coordinates of the cell as a tuple.'''
             return (self.x, self.y)
@@ -214,7 +223,7 @@ class Maze:
         return { 'bytes': bytes(binary), 'hex': bytes(binary).hex(), 'binary': s, 'decimal': n }
     
     @staticmethod
-    def from_binary( binary: bytes) -> Maze:
+    def from_binary(binary: bytes) -> Maze:
         '''Deserializes a string of bits to create a Maze instance.'''
         width = int.from_bytes(binary[0:2], 'big')
         height = int.from_bytes(binary[2:4], 'big')
