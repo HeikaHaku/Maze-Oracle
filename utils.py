@@ -40,11 +40,11 @@ class ResultTable:
         else:
             self.invalid.append(ResultTable.Result(maze, result, time_ns))
             
-def lcg(state: int, bits: int = 16) -> int:
+def lcg(state: int, bits: int = 31, mod: int | None = None) -> int:
     '''Linear Congruential Generator'''
     a = 1103515245
     c = 12345
-    mod = (2 ** bits) - 1
+    mod = mod if mod is not None else (2 ** bits)
     
     return (a * state + c) % mod
 
@@ -54,11 +54,11 @@ class LCG:
     _a: int = 1103515245
     _c: int = 12345
     
-    def __init__(self: Self, seed: int, bits: int = 16) -> Self:
+    def __init__(self: Self, seed: int, bits: int = 31, mod: int | None = None) -> Self:
         self._state: int = seed
         self._seed: int = seed
         self._bits: int = bits
-        self._mod: int = (2 ** bits) - 1
+        self._mod: int = mod if mod is not None else (2 ** bits)
         
     @property
     def a(self: Self) -> int:
@@ -96,11 +96,11 @@ class LCG:
     def __call__(self: Self) -> int:
         return self.next()
     
-def lcg_wrapper(seed: int, bits: int = 16) -> Callable[[], int]:
+def lcg_wrapper(seed: int, bits: int = 31, mod: int | None = None) -> Callable[[], int]:
     '''A wrapper for the Linear Congruential Generator that maintains its own state.'''
     a: int = 1103515245
     c: int = 12345
-    mod = (2 ** bits) - 1
+    mod = (2 ** bits) if mod is None else mod
     
     def lcg() -> int:
         nonlocal seed
