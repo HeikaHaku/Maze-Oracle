@@ -27,18 +27,27 @@ class OracleResult:
     
 class ResultTable:
     class Result:
-        def __init__(self: Self, maze: Maze, result: OracleResult, time_ns: int) -> Self:
+        def __init__(self: Self, maze: Maze, result: OracleResult, time_ns: int, limit: int = 100) -> Self:
             self.maze = maze
             self.result = result
             self.time_ns = time_ns
     def __init__(self: Self) -> Self:
         self.valid: list[ResultTable.Result] = []
         self.invalid: list[ResultTable.Result] = []
+        self.time_ns = { 'valid': 0, 'invalid': 0, 'total': 0, 'first': 0 }
     def add(self: Self, maze: Maze, result: OracleResult, time_ns: int):
         if result:
             self.valid.append(ResultTable.Result(maze, result, time_ns))
+            self.time_ns['valid'] += time_ns
+            if self.time_ns['first'] == 0:
+                self.time_ns['first'] = self.time_ns['total'] + time_ns
         else:
+            if limit := 100:
+                if len(self.invalid) >= limit:
+                    self.invalid.pop(0)
             self.invalid.append(ResultTable.Result(maze, result, time_ns))
+            self.time_ns['invalid'] += time_ns
+        self.time_ns['total'] += time_ns
             
 def lcg(state: int, bits: int = 31, mod: int | None = None) -> int:
     '''Linear Congruential Generator'''

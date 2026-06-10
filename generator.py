@@ -219,12 +219,63 @@ def reversible_generator(seed: int, bits: int = 16, width: int = 16, height: int
         cells.remove(coords)
 
     # Set walls
+    # for x in range(width):
+    #     for y in range(height):
+    #         if y != height - 1 and rng() >= rng.mod // 2:
+    #             maze.get_cell(x, y).remove_wall(Direction.DOWN, maze)
+    #         if x != width - 1 and rng() >= rng.mod // 2:
+    #             maze.get_cell(x, y).remove_wall(Direction.RIGHT, maze)
+    
+    # Set walls
     for x in range(width):
         for y in range(height):
-            if y != height - 1 and rng() >= rng.mod // 2:
-                maze.get_cell(x, y).remove_wall(Direction.DOWN, maze)
-            if x != width - 1 and rng() >= rng.mod // 2:
-                maze.get_cell(x, y).remove_wall(Direction.RIGHT, maze)
+            can_right = x < width - 1
+            can_down = y < height - 1
+            
+            if can_right and can_down:
+                if rng() >= rng.mod // 2:
+                    maze.get_cell(x, y).remove_wall(Direction.RIGHT, maze)
+                else:
+                    maze.get_cell(x, y).remove_wall(Direction.DOWN, maze)
+            elif can_right:
+                # cell = maze.get_cell(x, y)
+                # if len([wall for wall in cell.walls.values() if wall]) == 4:
+                #     if rng() >= rng.mod // 2:
+                #         cell.remove_wall(Direction.RIGHT, maze)
+                #     else:
+                #         cell.remove_wall(Direction.UP, maze)
+                cell = maze.get_cell(x, y)
+                cell.remove_wall(Direction.RIGHT, maze)
+            elif can_down:
+                # cell = maze.get_cell(x, y)
+                # if len([wall for wall in cell.walls.values() if wall]) == 4:
+                #     if rng() >= rng.mod // 2:
+                #         cell.remove_wall(Direction.DOWN, maze)
+                #     else:
+                #         cell.remove_wall(Direction.LEFT, maze)
+                cell = maze.get_cell(x, y)
+                cell.remove_wall(Direction.DOWN, maze)
+    
+    # Set Walls
+    # current = maze.special_cells[SpecialCell.START]
+    # current.visited = True
+    
+    # for _ in range(width * height):
+    #     # Kill
+    #     neighbors = current.get_unvisited_neighbors(maze)
+    #     while neighbors:
+    #         next = neighbors[rng() % len(neighbors)]
+    #         current.remove_wall(current.get_direction_to(next), maze)
+    #         next.visited = True
+    #         current = next
+            
+    #     # Hunt
+    #     for cell in maze.get_unvisited():
+    #         visited = [cell for cell in cell.neighbors(maze) if cell.visited]
+    #         if visited:
+                
+                
+            
 
     return maze
             

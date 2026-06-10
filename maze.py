@@ -13,6 +13,7 @@ class Maze:
             self.y = y
             self.walls = {Direction.UP: True, Direction.RIGHT: True, Direction.DOWN: True, Direction.LEFT: True}
             self.special: SpecialCell | None = None
+            self.visited = False # Used for maze generation and pathfinding algorithms, but not serialized to JSON since it's a transient property.
             
         def to_dict(self: Self) -> dict:
             '''Converts the cell's properties to a dictionary format for serialization.'''
@@ -74,6 +75,10 @@ class Maze:
                     return
                 self.walls[direction] = False
                 neighbor.walls[direction.opposite()] = False
+                
+        def get_unvisited_neighbors(self: Self, maze: Maze) -> list[Maze.Cell]:
+            '''Returns a list of unvisited neighboring cells.'''
+            return [neighbor for neighbor in self.neighbors(maze) if not neighbor.visited]
         
         def coords(self: Self) -> tuple[int, int]:
             '''Returns the coordinates of the cell as a tuple.'''
@@ -120,6 +125,10 @@ class Maze:
     def get_cell(self: Self, x: int, y: int) -> Maze.Cell:
         '''Returns the cell object at the specified coordinates.'''
         return self.cells[x][y]
+    
+    def get_unvisited(self: Self) -> list[Maze.Cell]:
+        '''Returns a list of all unvisited cells in the maze.'''
+        return [cell for row in self.cells for cell in row if not cell.visited]
         
     def to_dict(self: Self) -> dict:
         '''Converts the maze's properties to a dictionary format for serialization.'''
