@@ -196,6 +196,13 @@ def binary_generator(w: int, h: int) -> Maze:
 def reversible_generator(seed: int, bits: int = 16, width: int = 16, height: int = 16) -> Maze:
     '''
     Fixed-output procedural maze generation. Uses an LCG to produce predictable results used to generate the maze.
+
+    I made it so the start and exit can generate anywhere on the map since for our experiment it doesn't matter.
+    I also changed it so tht it can generate special cells in the same coordinate. Then, we can check for
+    collisions in the oracle itself while keeping the map gen quantum friendly. Remind me we need to change all the
+    oracles to account for this.
+
+    E.R. 06/15/2026
     '''
     
     maze = Maze(width, height, seed)
@@ -204,19 +211,23 @@ def reversible_generator(seed: int, bits: int = 16, width: int = 16, height: int
     specials = {k: rng() for k in SpecialCell}
     
     # Get cell coordinates along the perimeter
-    edge_cells = [(x, y) for x in range(width) for y in range(height) if x == 0 or y == 0 or x == width - 1 or y == height - 1]
+    #edge_cells = [(x, y) for x in range(width) for y in range(height) if x == 0 or y == 0 or x == width - 1 or y == height - 1]
     # Get all possible cell coordinates
     cells = [(x, y) for x in range(width) for y in range(height)]
     
+    #for special in specials:
+    #    if special == SpecialCell.START or special == SpecialCell.EXIT:
+    #        coords = edge_cells[specials[special] % len(edge_cells)]
+    #    else:
+    #        coords = cells[specials[special] % len(cells)]
+    #    maze.mark_special_cell(*coords, special)
+    #    if coords in edge_cells:
+    #        edge_cells.remove(coords)
+    #    cells.remove(coords)
+
     for special in specials:
-        if special == SpecialCell.START or special == SpecialCell.EXIT:
-            coords = edge_cells[specials[special] % len(edge_cells)]
-        else:
-            coords = cells[specials[special] % len(cells)]
+        coords = cells[specials[special] % len(cells)]
         maze.mark_special_cell(*coords, special)
-        if coords in edge_cells:
-            edge_cells.remove(coords)
-        cells.remove(coords)
 
     # Set walls
     # for x in range(width):
