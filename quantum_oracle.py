@@ -9,11 +9,30 @@ This file implements a seed-level Grover search.
 from __future__ import annotations
 
 from math import pi, sqrt
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister, transpile
+try:
+    from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister, transpile
+except ImportError:  # Keep oracle(maze) usable even without Qiskit installed.
+    ClassicalRegister = None  # type: ignore[assignment]
+    QuantumCircuit = None  # type: ignore[assignment]
+    QuantumRegister = None  # type: ignore[assignment]
+    transpile = None  # type: ignore[assignment]
 
 from collections import Counter
+
+if TYPE_CHECKING:
+    from maze import Maze
+    from utils import OracleResult
+
+
+def _require_qiskit() -> None:
+    """Raise a clear error when a circuit-building path needs Qiskit."""
+    if any(obj is None for obj in (ClassicalRegister, QuantumCircuit, QuantumRegister, transpile)):
+        raise ImportError(
+            "Qiskit is required for quantum circuit construction. "
+            "Install it with: pip install qiskit qiskit-aer"
+        )
 
 
 def bits_little_endian(value: int, width: int) -> list[int]:
@@ -33,6 +52,24 @@ def qiskit_count_key_to_seed(bitstring: str) -> int:
     c[n-1]...c[0], so int(bitstring, 2) gives the expected seed.
     """
     return int(bitstring, 2)
+
+
+def oracle(maze: "Maze") -> "OracleResult":
+    """
+    Compatibility entry point matching classic_oracle.oracle(maze).
+
+    main.py calls oracle_module.oracle(maze) after generating one maze from
+    one seed. The seed-level Grover code in this module marks basis states
+    using the same maze-validity predicate, but it does not directly consume
+    a single Maze object as a quantum circuit.
+
+    This wrapper therefore keeps quantum_oracle usable as a drop-in module
+    wherever classic_oracle is currently used, while preserving one shared
+    definition of maze validity.
+    """
+    from classic_oracle import oracle as classic_maze_oracle
+
+    return classic_maze_oracle(maze)
 
 
 def apply_phase_flip_on_basis_state(
@@ -96,6 +133,8 @@ def build_phase_oracle(
     3. Apply Grover diffusion.
     4. Measure amplified candidate seeds.
     """
+    _require_qiskit()
+
     marked = sorted(set(marked_seeds))
     max_seed = 2**num_seed_qubits
 
@@ -121,6 +160,8 @@ def build_diffuser(num_seed_qubits: int, name: str = "Diffuser") -> QuantumCircu
     """
     Build the standard Grover diffusion operator over the seed register.
     """
+    _require_qiskit()
+
     seed_register = QuantumRegister(num_seed_qubits, "seed")
     diffuser = QuantumCircuit(seed_register, name=name)
 
@@ -170,6 +211,8 @@ def build_grover_circuit(
     """
     Build a complete Grover circuit over seed values.
     """
+    _require_qiskit()
+
     marked = sorted(set(marked_seeds))
 
     if iterations is None:
@@ -257,7 +300,7 @@ def debug_maze_seed_space(
     width: int = 16,
     height: int = 16,
     generator_bits: int = 16,
-) -> None:
+) -> list[int]:
     from generator import reversible_generator
     from classic_oracle import oracle
 
@@ -296,6 +339,8 @@ def run_local_simulation(
     """
     Run the circuit locally using qiskit-aer.
     """
+    _require_qiskit()
+
     try:
         from qiskit_aer import AerSimulator
     except ImportError as exc:

@@ -1,5 +1,6 @@
 from utils import ResultTable
 import classic_oracle as classic
+import quantum_orace as quantum
 from generator import generator, fixed_generator, reversible_generator
 from time import perf_counter_ns
 import random
@@ -13,7 +14,7 @@ for seed in seeds:
     # TODO: Skip duplicate seeds?
     unique_seeds.add(seed)
     maze = reversible_generator(seed)
-    result = classic.oracle(maze)
+    result = quantum.oracle(maze)
     end = perf_counter_ns()
     results.add(maze, result, end - start)
     start = perf_counter_ns()
