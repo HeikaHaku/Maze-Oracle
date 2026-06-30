@@ -1,6 +1,6 @@
 from utils import ResultTable
 import classic_oracle as classic
-import quantum_orace as quantum
+import quantum_oracle as quantum
 from generator import generator, fixed_generator, reversible_generator
 from time import perf_counter_ns
 import random
