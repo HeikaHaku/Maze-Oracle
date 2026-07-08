@@ -1,5 +1,5 @@
 # synced_seed_main.py
-# Benchmark classic_oracle and quantum_oracle on the exact same seed list.
+# Benchmark classic_oracle and quantum_oracle on the exact same random seed list.
 # Invalid mazes are counted and timed only. Only valid seeds/mazes are stored.
 
 from __future__ import annotations
@@ -14,11 +14,30 @@ import quantum_oracle
 from generator import reversible_generator
 
 
+# Number of random seed draws to benchmark.
 NUM_RUNS = 100_000
+
+# Controls the length of the sampled seeds. For example:
+#   8 bits  -> seeds from 0 to 255
+#   16 bits -> seeds from 0 to 65,535
+#   32 bits -> seeds from 0 to 4,294,967,295
+SEED_BITS = 16
+
+WIDTH = 16
+HEIGHT = 16
+
+# Keep this True when you want the generator's LCG width to scale with the
+# sampled seed width. If False, seeds are still sampled with SEED_BITS, but the
+# generator uses FIXED_GENERATOR_BITS internally.
+GENERATOR_BITS_MATCH_SEED_BITS = True
+FIXED_GENERATOR_BITS = 16
+
 RANDOM_SEED = 12345
+SAMPLE_RANDOM_SEED = 12346
 DRAW_VALID_MAZES = True
 DRAW_COUNT = 2
 MISMATCH_PRINT_LIMIT = 10
+ALTERNATE_ORACLE_ORDER = True
 
 
 @dataclass
@@ -29,16 +48,18 @@ class OracleStats:
     valid_time_ns: int = 0
     invalid_time_ns: int = 0
     total_time_ns: int = 0
-    first_valid_wall_ns: int | None = None
+    first_valid_seed: int | None = None
+    first_valid_index: int | None = None
+    first_valid_cumulative_oracle_ns: int | None = None
     valid_seeds: list[int] = field(default_factory=list)
 
     def record(
         self,
         *,
         seed: int,
+        index: int,
         result: Any,
         elapsed_ns: int,
-        wall_ns_at_result: int,
     ) -> None:
         self.total_time_ns += elapsed_ns
 
@@ -47,8 +68,12 @@ class OracleStats:
             self.valid_time_ns += elapsed_ns
             self.valid_seeds.append(seed)
 
-            if self.first_valid_wall_ns is None:
-                self.first_valid_wall_ns = wall_ns_at_result
+            if self.first_valid_seed is None:
+                self.first_valid_seed = seed
+                self.first_valid_index = index
+                # Oracle-only cumulative time, not wall-clock time. This avoids
+                # penalizing whichever oracle happens to run second.
+                self.first_valid_cumulative_oracle_ns = self.total_time_ns
         else:
             self.invalid_count += 1
             self.invalid_time_ns += elapsed_ns
@@ -69,9 +94,15 @@ class OracleStats:
         return self.total_time_ns / 1e9 / 60
 
     def first_valid_ms(self) -> float:
-        if self.first_valid_wall_ns is None:
+        if self.first_valid_cumulative_oracle_ns is None:
             return 0.0
-        return self.first_valid_wall_ns / 1e6
+        return self.first_valid_cumulative_oracle_ns / 1e6
+
+    def first_valid_index_display(self) -> str:
+        return "None" if self.first_valid_index is None else f"{self.first_valid_index:,}"
+
+    def first_valid_seed_display(self) -> str:
+        return "None" if self.first_valid_seed is None else f"{self.first_valid_seed}"
 
 
 def result_reason(result: Any) -> str:
@@ -79,29 +110,51 @@ def result_reason(result: Any) -> str:
     return "" if reason is None else str(reason)
 
 
+def timed_oracle_call(oracle_function: Any, maze: Any) -> tuple[Any, int]:
+    start = perf_counter_ns()
+    result = oracle_function(maze)
+    end = perf_counter_ns()
+    return result, end - start
+
+
+def generator_bits_for(seed_bits: int) -> int:
+    if GENERATOR_BITS_MATCH_SEED_BITS:
+        return seed_bits
+    return FIXED_GENERATOR_BITS
+
+
+def format_duration(ns: int) -> str:
+    return f"{ns / 1e9 / 60:,.6f} minutes ({ns / 1e9:,.6f} seconds)"
+
+
 def print_side_by_side_stats(
     *,
     classic_stats: OracleStats,
     quantum_stats: OracleStats,
     num_runs: int,
+    seed_bits: int,
+    generator_bits: int,
+    seed_space_size: int,
     unique_seed_count: int,
     generation_time_ns: int,
     total_wall_time_ns: int,
     mismatch_count: int,
 ) -> None:
+    print("Synced random-seed benchmark")
+    print(f"Seed bits: {seed_bits}")
+    print(f"Generator bits: {generator_bits}")
+    print(f"Maze size: {WIDTH} x {HEIGHT}")
+    print(f"Generator bits match seed bits: {GENERATOR_BITS_MATCH_SEED_BITS}")
+    if not GENERATOR_BITS_MATCH_SEED_BITS:
+        print(f"Fixed generator bits: {FIXED_GENERATOR_BITS}")
+    print(f"Alternating oracle order: {ALTERNATE_ORACLE_ORDER}")
+    print(f"Seed-space size: {seed_space_size:,}")
     print(f"Seeds tested: {num_runs:,}")
     print(f"Unique seeds used: {unique_seed_count:,}")
+    print(f"Duplicate seed draws: {num_runs - unique_seed_count:,}")
     print(f"Mismatches: {mismatch_count:,}")
-    print(
-        f"Total maze generation time: "
-        f"{generation_time_ns / 1e9 / 60:,.6f} minutes "
-        f"({generation_time_ns / 1e9:,.6f} seconds)"
-    )
-    print(
-        f"Total benchmark wall time: "
-        f"{total_wall_time_ns / 1e9 / 60:,.6f} minutes "
-        f"({total_wall_time_ns / 1e9:,.6f} seconds)"
-    )
+    print(f"Total maze generation time: {format_duration(generation_time_ns)}")
+    print(f"Total benchmark wall time: {format_duration(total_wall_time_ns)}")
     print()
 
     rows = [
@@ -142,7 +195,17 @@ def print_side_by_side_stats(
             ),
         ),
         (
-            "Time until first valid maze",
+            "First valid seed index",
+            classic_stats.first_valid_index_display(),
+            quantum_stats.first_valid_index_display(),
+        ),
+        (
+            "First valid seed",
+            classic_stats.first_valid_seed_display(),
+            quantum_stats.first_valid_seed_display(),
+        ),
+        (
+            "Oracle time until first valid maze",
             f"{classic_stats.first_valid_ms():,.6f} ms",
             f"{quantum_stats.first_valid_ms():,.6f} ms",
         ),
@@ -173,44 +236,68 @@ def print_side_by_side_stats(
 
 def main() -> None:
     seed_rng = random.Random(RANDOM_SEED)
-    sample_rng = random.Random(RANDOM_SEED + 1)
+    sample_rng = random.Random(SAMPLE_RANDOM_SEED)
 
-    seeds = [seed_rng.getrandbits(32) for _ in range(NUM_RUNS)]
+    generator_bits = generator_bits_for(SEED_BITS)
+    seed_space_size = 2**SEED_BITS
+
+    seeds = [seed_rng.getrandbits(SEED_BITS) for _ in range(NUM_RUNS)]
     unique_seeds = set(seeds)
 
     classic_stats = OracleStats("Classic oracle")
     quantum_stats = OracleStats("Quantum oracle")
 
-    valid_mazes_by_seed = {}
-    mismatches = []
+    valid_mazes_by_seed: dict[int, Any] = {}
+    mismatches: list[tuple[int, Any, Any]] = []
     generation_time_ns = 0
 
     benchmark_start = perf_counter_ns()
 
-    for seed in seeds:
+    for index, seed in enumerate(seeds, start=1):
         generation_start = perf_counter_ns()
-        maze = reversible_generator(seed)
+        maze = reversible_generator(
+            seed=seed,
+            bits=generator_bits,
+            width=WIDTH,
+            height=HEIGHT,
+        )
         generation_end = perf_counter_ns()
         generation_time_ns += generation_end - generation_start
 
-        classic_start = perf_counter_ns()
-        classic_result = classic_oracle.oracle(maze)
-        classic_end = perf_counter_ns()
+        # Alternate oracle order to reduce the bias from always running one
+        # oracle on a cache-warmed maze object.
+        classic_first = (not ALTERNATE_ORACLE_ORDER) or (index % 2 == 1)
+
+        if classic_first:
+            classic_result, classic_elapsed_ns = timed_oracle_call(
+                classic_oracle.oracle,
+                maze,
+            )
+            quantum_result, quantum_elapsed_ns = timed_oracle_call(
+                quantum_oracle.oracle,
+                maze,
+            )
+        else:
+            quantum_result, quantum_elapsed_ns = timed_oracle_call(
+                quantum_oracle.oracle,
+                maze,
+            )
+            classic_result, classic_elapsed_ns = timed_oracle_call(
+                classic_oracle.oracle,
+                maze,
+            )
+
         classic_stats.record(
             seed=seed,
+            index=index,
             result=classic_result,
-            elapsed_ns=classic_end - classic_start,
-            wall_ns_at_result=classic_end - benchmark_start,
+            elapsed_ns=classic_elapsed_ns,
         )
-
-        quantum_start = perf_counter_ns()
-        quantum_result = quantum_oracle.oracle(maze)
-        quantum_end = perf_counter_ns()
         quantum_stats.record(
             seed=seed,
+            index=index,
             result=quantum_result,
-            elapsed_ns=quantum_end - quantum_start,
-            wall_ns_at_result=quantum_end - benchmark_start,
+            elapsed_ns=quantum_elapsed_ns,
         )
 
         classic_valid = bool(classic_result)
@@ -229,6 +316,9 @@ def main() -> None:
         classic_stats=classic_stats,
         quantum_stats=quantum_stats,
         num_runs=NUM_RUNS,
+        seed_bits=SEED_BITS,
+        generator_bits=generator_bits,
+        seed_space_size=seed_space_size,
         unique_seed_count=len(unique_seeds),
         generation_time_ns=generation_time_ns,
         total_wall_time_ns=total_wall_time_ns,
@@ -252,12 +342,12 @@ def main() -> None:
             print()
             print(f"Seed: {seed}")
             print(
-                f"Classic: valid={bool(classic_result)}"
-                f" reason={result_reason(classic_result)!r}"
+                f"Classic: valid={bool(classic_result)} "
+                f"reason={result_reason(classic_result)!r}"
             )
             print(
-                f"Quantum: valid={bool(quantum_result)}"
-                f" reason={result_reason(quantum_result)!r}"
+                f"Quantum: valid={bool(quantum_result)} "
+                f"reason={result_reason(quantum_result)!r}"
             )
 
     if DRAW_VALID_MAZES:
