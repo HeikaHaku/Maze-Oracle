@@ -113,7 +113,7 @@ Copyright (c) 2026 Elias Sopkin and Evan Reeves.
 
 The archive predates and is separate from later optimized oracles developed for research on Grover-inspired procedural-generation seed search. It should be cited as an **earlier experimental implementation**, not as the source code for later hardware results unless a paper explicitly establishes that correspondence.
 
-##Acknowledgement
+## Acknowledgement
 This work was supported in part by the U.S. Department of Energy, Office of Science, Advanced Scientific Computing Research, through the ReACT-QISE Consortium under Award No. DE-SC0024096.
 
 ## Disclosure
