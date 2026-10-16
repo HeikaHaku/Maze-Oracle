@@ -102,10 +102,17 @@ If you use or discuss this code, please cite the repository (preferably a fixed 
 
 After depositing a tagged release in Zenodo, replace the mutable repository URL in formal citations with the **version-specific DOI** and add the archived version number. The repository's Git history and release tag provide further provenance.
 
-## Licensing and reuse
+## License
 
-**No software license is currently declared in the repository.** Public visibility on GitHub does not, by itself, grant permission for unrestricted redistribution or modification. The contributors should agree on a license and add a `LICENSE` file before advertising the project as open source or publishing a reusable archival release.
+This project is distributed under the BSD 3-Clause License.
+See [LICENSE](LICENSE) for details.
+
+Copyright (c) 2026 Elias Sopkin and Evan Reeves.
 
 ## Project context
 
 The archive predates and is separate from later optimized oracles developed for research on Grover-inspired procedural-generation seed search. It should be cited as an **earlier experimental implementation**, not as the source code for later hardware results unless a paper explicitly establishes that correspondence.
+
+## Disclosure
+
+Evan Reeves made use of ChatGPT in writing his sections of code. Elias Sopkin did not make use of AI in his coding sections.
